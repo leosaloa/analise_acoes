@@ -16,7 +16,7 @@ if not os.path.exists(origem):
 if not os.path.exists(destino):
     os.makedirs(destino)
 
-# Marca o início do processamento
+# Início do processamento
 inicio_processamento = datetime.now()
 arquivos = os.listdir(origem)
 
@@ -27,34 +27,52 @@ lista_arquivo = [os.path.join(origem, nome_arquivo) for nome_arquivo in arquivos
 df_dict = pd.read_excel(lista_arquivo[0], sheet_name=None)
 
 # Iterar sobre cada aba e aplicar dropna() para remover linhas nulas
+nome_abas = []
+conteudo_abas = []
 for nome_aba, df in df_dict.items():
-    # Remove linhas onde a coluna 'Quantidade' ou outras colunas chave tenham o valor 'Total' ou valores nulos
-    df_dict[nome_aba] = df[~df.isin(['Total']).any(axis=1)]  # Filtra as linhas que têm o valor 'Total'
-    
-    # Remove a última linha, se ela for nula ou vazia
-    df_dict[nome_aba] = df_dict[nome_aba].dropna(how='all')  # Remove linhas totalmente vazias
-    
-    tipos_dados = {
-        'Conta': str,
-        'CNPJ da Empresa': str,
-        'Quantidade': 'Int64',
-        'Quantidade Disponível': 'Int64',
-        'Quantidade Indisponível': 'Int64',
-        'Valor Atualizado': float,
-        'CNPJ do Fundo': str,
-        'Valor líquido': float,
-        'Período (Inicial)': 'datetime64',
-        'Período (Final)': 'datetime64',
-        'Preço Médio (Venda)': float
-    }
+    df_dict[nome_aba] = df.dropna(subset=['Instituição'])
+    nome_abas.append(nome_aba)
+    conteudo_abas.append(df_dict[nome_aba])
 
-    # Percorre as colunas e aplica a conversão de tipos, se a coluna existir no DataFrame
-    for coluna, tipo in tipos_dados.items():
-        if coluna in df.columns:
-            # Se for uma coluna numérica, converte usando pd.to_numeric para lidar com NaN
-            if tipo == 'Int64':
-                df[coluna] = pd.to_numeric(df[coluna], errors='coerce').astype('Int64')
-            else:
-                df[coluna] = df[coluna].astype(tipo)  # Aplica a conversão de tipo especificado
+tipos_dados_geral = {
+    'Produto': str,
+    'Instituição': str,
+    'Conta': 'Int64',
+    'Código de Negociação': str,
+    'CNPJ da Empresa': str,
+    'CNPJ do Fundo': str,
+    'Código ISIN / Distribuição': str,
+    'Tipo': str,
+    'Escriturador': str,
+    'Administrador': str,
+    'Quantidade': 'int64',
+    'Quantidade Disponível': 'int64',
+    'Quantidade Indisponível': 'int64',
+    'Motivo': str,
+    'Preço de Fechamento': float,
+    'Valor Atualizado': float,
+    'Pagamento': 'Int64',
+    'Tipo de Evento': str,
+    'Preço unitário': float,
+    'Valor líquido': float,
+    'Período (Inicial)': 'datetime64',
+    'Período (Final)': 'datetime64',
+    'Quantidade (Compra)': 'int64',
+    'Quantidade (Venda)': 'int64',
+    'Quantidade (Líquida)': 'int64',
+    'Preço Médio (Compra)': float,
+    'Preço Médio (Venda)': float
+}
 
-    print(f'ABA: {nome_aba}\n{df.dtypes}\n---')
+# Remover '-' de todas as abas e colunas de texto
+for nome_aba, df in df_dict.items():
+    for col in df.select_dtypes(include=['object', 'string']):
+        df_dict[nome_aba][col] = df[col].map(lambda x: x.replace('-', '') if isinstance(x, str) else x)
+
+# Caminho do arquivo exportado
+arquivo_saida = os.path.join(destino, 'arquivo_tratado.xlsx')
+
+# Criando um ExcelWriter para salvar múltiplas abas
+with pd.ExcelWriter(arquivo_saida, engine='openpyxl') as writer:
+    for nome_aba, df in df_dict.items():
+        df.to_excel(writer, sheet_name=nome_aba, index=False)  # Salva cada aba no arquivo Excel

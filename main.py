@@ -26,6 +26,8 @@ lista_arquivo = [os.path.join(origem, nome_arquivo) for nome_arquivo in arquivos
 # Lê todas as abas do arquivo como um dicionário de DataFrames
 df_dict = pd.read_excel(lista_arquivo[0], sheet_name=None)
 
+# Tratar Arquivo
+
 # Iterar sobre cada aba e aplicar dropna() para remover linhas nulas
 nome_abas = []
 conteudo_abas = []
@@ -34,6 +36,18 @@ for nome_aba, df in df_dict.items():
     nome_abas.append(nome_aba)
     conteudo_abas.append(df_dict[nome_aba])
 
+# Remover '-' de todas as abas e colunas de texto
+for nome_aba, df in df_dict.items():
+    for col in df.select_dtypes(include=['object', 'string']):
+        df_dict[nome_aba][col] = df[col].map(lambda x: x.replace('-', '') if isinstance(x, str) and df[col][0] == '-' else x)
+
+# Separar nome da ação
+for nome_aba, df in df_dict.items():
+     if 'Produto' in df.columns:
+            df['Código de Negociação'] = df['Produto'].str.split(' - ').str[0]
+
+
+# Mapear tipo das colunas
 tipos_dados_geral = {
     'Produto': str,
     'Instituição': str,
@@ -64,10 +78,7 @@ tipos_dados_geral = {
     'Preço Médio (Venda)': float
 }
 
-# Remover '-' de todas as abas e colunas de texto
-for nome_aba, df in df_dict.items():
-    for col in df.select_dtypes(include=['object', 'string']):
-        df_dict[nome_aba][col] = df[col].map(lambda x: x.replace('-', '') if isinstance(x, str) else x)
+# Exportar arquivo
 
 # Caminho do arquivo exportado
 arquivo_saida = os.path.join(destino, 'arquivo_tratado.xlsx')

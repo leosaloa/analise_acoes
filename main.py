@@ -46,7 +46,6 @@ for nome_aba, df in df_dict.items():
      if 'Produto' in df.columns:
             df['Código de Negociação'] = df['Produto'].str.split(' - ').str[0]
 
-
 # Mapear tipo das colunas
 tipos_dados_geral = {
     'Produto': str,

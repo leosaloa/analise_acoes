@@ -64,7 +64,7 @@ tipos_dados_geral = {
     'Motivo': str,
     'Preço de Fechamento': float,
     'Valor Atualizado': float,
-    'Pagamento': 'Int64',
+    'Pagamento': 'datetime64',
     'Tipo de Evento': str,
     'Preço unitário': float,
     'Valor líquido': float,
@@ -76,6 +76,24 @@ tipos_dados_geral = {
     'Preço Médio (Compra)': float,
     'Preço Médio (Venda)': float
 }
+
+for nome_aba, df in df_dict.items():
+    for col, tipo in tipos_dados_geral.items():
+        if col in df.columns:
+            try:
+                if tipo == 'int64' or tipo == 'Int64':
+                    df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')
+                elif tipo == 'float':
+                    df[col] = df[col].astype(float)
+                elif tipo == 'datatime64':
+                    df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+                else:
+                    df[col] = df[col].astype(str)
+            except Exception as e:
+                print(f'Erro ao converter a coluna {col} na aba {nome_aba}: {e}')
+
+for nome_aba, df in df_dict.items():
+        print(df.dtypes,'\n')
 
 # Exportar arquivo
 
